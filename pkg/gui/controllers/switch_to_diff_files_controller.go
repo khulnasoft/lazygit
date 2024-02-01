@@ -51,7 +51,7 @@ func (self *SwitchToDiffFilesController) GetKeybindings(opts types.KeybindingsOp
 		{
 			Key:               opts.GetKey(opts.Config.Universal.GoInto),
 			Handler:           self.withItem(self.enter),
-			GetDisabledReason: self.require(self.singleItemSelected()),
+			GetDisabledReason: self.require(self.singleItemSelected(self.itemHasFilesToView)),
 			Description:       self.c.Tr.ViewItemFiles,
 		},
 	}
@@ -90,4 +90,12 @@ func (self *SwitchToDiffFilesController) viewFiles(opts SwitchToCommitFilesConte
 	}
 
 	return self.c.PushContext(diffFilesContext)
+}
+
+func (self *SwitchToDiffFilesController) itemHasFilesToView(ref types.Ref) *types.DisabledReason {
+	if ref.RefName() == "" {
+		return &types.DisabledReason{Text: self.c.Tr.SelectedItemDoesNotHaveFiles}
+	}
+
+	return nil
 }
