@@ -26,8 +26,8 @@ func NewSubmoduleCommands(gitCommon *GitCommon) *SubmoduleCommands {
 	}
 }
 
-func (self *SubmoduleCommands) GetConfigs() ([]*models.SubmoduleConfig, error) {
-	file, err := os.Open(".gitmodules")
+func (self *SubmoduleCommands) GetConfigs(parentName string, parentPath string) ([]*models.SubmoduleConfig, error) {
+	file, err := os.Open(filepath.Join(parentPath, ".gitmodules"))
 	if err != nil {
 		if os.IsNotExist(err) {
 			return nil, nil
@@ -55,17 +55,28 @@ func (self *SubmoduleCommands) GetConfigs() ([]*models.SubmoduleConfig, error) {
 		line := scanner.Text()
 
 		if name, ok := firstMatch(line, `\[submodule "(.*)"\]`); ok {
+			if parentName != "" {
+				name = parentName + "/" + name
+			}
 			configs = append(configs, &models.SubmoduleConfig{Name: name})
 			continue
 		}
 
 		if len(configs) > 0 {
-			lastConfig := configs[len(configs)-1]
+			lastConfigIdx := len(configs) - 1
 
 			if path, ok := firstMatch(line, `\s*path\s*=\s*(.*)\s*`); ok {
-				lastConfig.Path = path
+				if parentPath != "" {
+					configs[lastConfigIdx].Path = parentPath + "/" + path
+				} else {
+					configs[lastConfigIdx].Path = path
+				}
+				nestedConfigs, err := self.GetConfigs(configs[lastConfigIdx].Name, configs[lastConfigIdx].Path)
+				if err == nil {
+					configs = append(configs, nestedConfigs...)
+				}
 			} else if url, ok := firstMatch(line, `\s*url\s*=\s*(.*)\s*`); ok {
-				lastConfig.Url = url
+				configs[lastConfigIdx].Url = url
 			}
 		}
 	}

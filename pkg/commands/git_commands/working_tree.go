@@ -342,7 +342,7 @@ func (self *WorkingTreeCommands) RemoveUntrackedFiles() error {
 
 // ResetAndClean removes all unstaged changes and removes all untracked files
 func (self *WorkingTreeCommands) ResetAndClean() error {
-	submoduleConfigs, err := self.submodule.GetConfigs()
+	submoduleConfigs, err := self.submodule.GetConfigs("", "")
 	if err != nil {
 		return err
 	}
